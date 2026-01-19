@@ -3,8 +3,8 @@ name = "gate0_dsl"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
-repository = "https://github.com/Qarait/gate0"
-homepage = "https://github.com/Qarait/gate0"
+repository = "https://github.com/hardliner66/gate0_dsl"
+homepage = "https://github.com/hardliner66/gate0_dsl"
 
 [lib]
 name = "gate0_dsl"
@@ -16,7 +16,7 @@ proc-macro2 = "1"
 syn = "2"
 quote = "1"
 proc-macro-error = "1"
+insta = "1.46.1"
 
 [dev-dependencies]
-gate0 = { version = "0.2.0", path = "../gate0" }
-# gate0 = { version = "0.2.0", git = "https://github.com/Qarait/gate0" }
+gate0 = { version = "0.2.0", git = "https://github.com/Qarait/gate0" }

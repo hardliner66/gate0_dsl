@@ -1,0 +1,59 @@
+---
+source: tests/basic_test.rs
+expression: policy
+---
+Policy {
+    rules: [
+        Rule {
+            effect: Allow,
+            target: Target {
+                principal: Any,
+                action: Any,
+                resource: Any,
+            },
+            condition: None,
+            reason: ReasonCode(
+                1,
+            ),
+        },
+        Rule {
+            effect: Allow,
+            target: Target {
+                principal: Exact(
+                    "alice",
+                ),
+                action: Exact(
+                    "read",
+                ),
+                resource: Exact(
+                    "doc1",
+                ),
+            },
+            condition: None,
+            reason: ReasonCode(
+                2,
+            ),
+        },
+        Rule {
+            effect: Deny,
+            target: Target {
+                principal: Exact(
+                    "eve",
+                ),
+                action: Any,
+                resource: Any,
+            },
+            condition: None,
+            reason: ReasonCode(
+                3,
+            ),
+        },
+    ],
+    config: PolicyConfig {
+        max_rules: 1000,
+        max_condition_depth: 10,
+        max_context_attrs: 64,
+        max_matcher_options: 64,
+        max_string_len: 256,
+    },
+}

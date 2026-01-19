@@ -538,14 +538,13 @@ impl ConditionExpr {
 }
 
 enum Condition {
-    Equals { attr: Ident, value: Value },
-    NotEquals { attr: Ident, value: Value },
+    Equals { attr: String, value: Value },
+    NotEquals { attr: String, value: Value },
     And(Box<Condition>, Box<Condition>),
     Or(Box<Condition>, Box<Condition>),
     Not(Box<Condition>),
     True,
     False,
-    Ident(Ident),
 }
 
 impl Parse for Condition {
@@ -555,14 +554,6 @@ impl Parse for Condition {
 }
 
 fn parse_condition_inner(input: ParseStream) -> Result<Condition> {
-    if let Ok(lit_bool) = input.parse::<LitBool>() {
-        if lit_bool.value {
-            return Ok(Condition::True);
-        } else {
-            return Ok(Condition::False);
-        }
-    }
-
     if input.peek(Ident) {
         let lookahead = input.fork();
         if let Ok(ident) = lookahead.parse::<Ident>() {
@@ -573,65 +564,69 @@ fn parse_condition_inner(input: ParseStream) -> Result<Condition> {
                     syn::parenthesized!(content in input);
                     Box::new(parse_condition_inner(&content)?)
                 } else {
-                    Box::new(parse_atom(input, false)?)
+                    Box::new(parse_atom(input)?)
                 };
                 return Ok(Condition::Not(inner));
             }
         }
     }
 
-    let left_span = input.span();
-    let left = parse_atom(input, true)?;
+    if let Some(attr) = parse_attr(input) {
+        if input.peek(Ident) {
+            let lookahead = input.fork();
+            if let Ok(ident) = lookahead.parse::<Ident>() {
+                if let Some(condition) = match ident.to_string().as_str() {
+                    "EQ" => {
+                        let _: Ident = input.parse()?;
+                        let value: Value = input.parse()?;
+                        Some(Condition::Equals { attr, value })
+                    }
+                    "NEQ" => {
+                        let _: Ident = input.parse()?;
+                        let value: Value = input.parse()?;
+                        Some(Condition::NotEquals { attr, value })
+                    }
+                    _ => None,
+                } {
+                    if let Ok(ident) = input.parse::<Ident>() {
+                        match ident.to_string().as_str() {
+                            "AND" => {
+                                let right = Box::new(parse_condition_inner(input)?);
+                                return Ok(Condition::And(Box::new(condition), right));
+                            }
+                            "OR" => {
+                                let right = Box::new(parse_condition_inner(input)?);
+                                return Ok(Condition::Or(Box::new(condition), right));
+                            }
+                            _ => {
+                                return Err(syn::Error::new(
+                                    input.span(),
+                                    "expected one of: AND, OR",
+                                ));
+                            }
+                        }
+                    }
+                    return Ok(condition);
+                }
+            }
+        }
+    }
+
+    let left = parse_atom(input)?;
 
     if input.peek(Ident) {
         let lookahead = input.fork();
         if let Ok(ident) = lookahead.parse::<Ident>() {
             let condition = match ident.to_string().as_str() {
                 "AND" => {
-                    if left.is_ident() {
-                        return Err(syn::Error::new(
-                            left_span,
-                            "expected true, false, or a parenthesized condition",
-                        ));
-                    }
                     let _: Ident = input.parse()?;
                     let right = Box::new(parse_condition_inner(input)?);
                     Condition::And(Box::new(left), right)
                 }
                 "OR" => {
-                    if left.is_ident() {
-                        return Err(syn::Error::new(
-                            left_span,
-                            "expected true, false, or a parenthesized condition",
-                        ));
-                    }
                     let _: Ident = input.parse()?;
                     let right = Box::new(parse_condition_inner(input)?);
                     Condition::Or(Box::new(left), right)
-                }
-                "EQ" => {
-                    let _: Ident = input.parse()?;
-                    let value: Value = input.parse()?;
-                    if let Condition::Ident(attr) = left {
-                        Condition::Equals { attr, value }
-                    } else {
-                        return Err(syn::Error::new(
-                            input.span(),
-                            "EQ requires an identifier on the left",
-                        ));
-                    }
-                }
-                "NEQ" => {
-                    let _: Ident = input.parse()?;
-                    let value: Value = input.parse()?;
-                    if let Condition::Ident(attr) = left {
-                        Condition::NotEquals { attr, value }
-                    } else {
-                        return Err(syn::Error::new(
-                            input.span(),
-                            "NEQ requires an identifier on the left",
-                        ));
-                    }
                 }
                 _ => {
                     return Err(syn::Error::new(
@@ -691,24 +686,24 @@ impl Value {
         match self {
             Value::Bool(value) => {
                 quote! {
-                    ::gate0::Value::Bool(#value),
+                    ::gate0::Value::Bool(#value)
                 }
             }
             Value::Str(value) => {
                 quote! {
-                    ::gate0::Value::String(#value),
+                    ::gate0::Value::String(#value)
                 }
             }
             Value::Int(value) => {
                 quote! {
-                    ::gate0::Value::Int(#value.into()),
+                    ::gate0::Value::Int(#value.into())
                 }
             }
         }
     }
 }
 
-fn parse_atom(input: ParseStream, ident_allowed: bool) -> Result<Condition> {
+fn parse_atom(input: ParseStream) -> Result<Condition> {
     if input.peek(Paren) {
         let content;
         syn::parenthesized!(content in input);
@@ -722,15 +717,23 @@ fn parse_atom(input: ParseStream, ident_allowed: bool) -> Result<Condition> {
             false => Ok(Condition::False),
         };
     }
-    if ident_allowed && input.peek(Ident) {
-        let ident: Ident = input.parse()?;
-        Ok(Condition::Ident(ident))
-    } else {
-        Err(syn::Error::new(
-            input.span(),
-            "expected true, false, or a parenthesized condition",
-        ))
+
+    Err(syn::Error::new(
+        input.span(),
+        "expected true, false, or a parenthesized condition",
+    ))
+}
+
+fn parse_attr(input: ParseStream) -> Option<String> {
+    if input.peek(LitStr) {
+        let lit_str: LitStr = input.parse().ok()?;
+        return Some(lit_str.value());
     }
+    if input.peek(Ident) {
+        let lit_str: Ident = input.parse().ok()?;
+        return Some(lit_str.to_string());
+    }
+    None
 }
 
 impl Condition {
@@ -803,13 +806,9 @@ impl Condition {
             }
             Condition::True => quote! { ::gate0::Condition::True },
             Condition::False => quote! { ::gate0::Condition::False },
-            Condition::Ident(ident) => quote! { #ident },
-        }
-    }
-    fn is_ident(&self) -> bool {
-        match self {
-            Condition::Ident(_) => true,
-            _ => false,
         }
     }
 }
+
+#[cfg(test)]
+mod test {}

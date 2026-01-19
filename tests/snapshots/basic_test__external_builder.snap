@@ -1,0 +1,14 @@
+---
+source: gate0_dsl_macros/tests/basic_test.rs
+expression: policy
+---
+Policy {
+    rules: [],
+    config: PolicyConfig {
+        max_rules: 200,
+        max_condition_depth: 10,
+        max_context_attrs: 64,
+        max_matcher_options: 64,
+        max_string_len: 256,
+    },
+}
