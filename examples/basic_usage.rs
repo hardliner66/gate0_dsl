@@ -197,12 +197,12 @@ fn example_6_external_builder() {
 }
 
 fn example_7_complete_policy() {
-    println!("Example 7: Complete Policy");
-
     const BLOCKED: ReasonCode = ReasonCode(10);
     const ADMIN_OK: ReasonCode = ReasonCode(20);
     const PUBLIC_READ: ReasonCode = ReasonCode(30);
     const OWNER_WRITE: ReasonCode = ReasonCode(40);
+
+    println!("Example 7: Complete Policy");
 
     let policy = policy_builder! {
         CONFIG {

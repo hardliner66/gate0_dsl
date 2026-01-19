@@ -80,24 +80,22 @@ impl Parse for PolicyDefinition {
 
         if input.peek(Ident) {
             let lookahead = input.fork();
-            if let Ok(ident) = lookahead.parse::<Ident>() {
-                if ident == "USE" {
+            if let Ok(ident) = lookahead.parse::<Ident>()
+                && ident == "USE" {
                     let _: Ident = input.parse()?;
                     let builder_expr: Expr = input.parse()?;
                     input.parse::<Token![;]>()?;
                     use_builder = Some(builder_expr);
                 }
-            }
         }
 
         if input.peek(Ident) {
             let lookahead = input.fork();
-            if let Ok(ident) = lookahead.parse::<Ident>() {
-                if ident == "CONFIG" {
+            if let Ok(ident) = lookahead.parse::<Ident>()
+                && ident == "CONFIG" {
                     let _: Ident = input.parse()?;
                     config = Some(input.parse()?);
                 }
-            }
         }
 
         while !input.is_empty() {
@@ -398,15 +396,9 @@ impl StructTarget {
             }
         }
 
-        let principal_matcher = principal
-            .map(|v| v.to_matcher())
-            .unwrap_or_else(|| quote! { ::gate0::Matcher::Any });
-        let action_matcher = action
-            .map(|v| v.to_matcher())
-            .unwrap_or_else(|| quote! { ::gate0::Matcher::Any });
-        let resource_matcher = resource
-            .map(|v| v.to_matcher())
-            .unwrap_or_else(|| quote! { ::gate0::Matcher::Any });
+        let principal_matcher = principal.map_or_else(|| quote! { ::gate0::Matcher::Any }, FieldValue::to_matcher);
+        let action_matcher = action.map_or_else(|| quote! { ::gate0::Matcher::Any }, FieldValue::to_matcher);
+        let resource_matcher = resource.map_or_else(|| quote! { ::gate0::Matcher::Any }, FieldValue::to_matcher);
 
         quote! {
             ::gate0::Target {
@@ -556,8 +548,8 @@ impl Parse for Condition {
 fn parse_condition_inner(input: ParseStream) -> Result<Condition> {
     if input.peek(Ident) {
         let lookahead = input.fork();
-        if let Ok(ident) = lookahead.parse::<Ident>() {
-            if ident == "NOT" {
+        if let Ok(ident) = lookahead.parse::<Ident>()
+            && ident == "NOT" {
                 let _: Ident = input.parse()?;
                 let inner = if input.peek(Paren) {
                     let content;
@@ -568,14 +560,13 @@ fn parse_condition_inner(input: ParseStream) -> Result<Condition> {
                 };
                 return Ok(Condition::Not(inner));
             }
-        }
     }
 
-    if let Some(attr) = parse_attr(input) {
-        if input.peek(Ident) {
+    if let Some(attr) = parse_attr(input)
+        && input.peek(Ident) {
             let lookahead = input.fork();
-            if let Ok(ident) = lookahead.parse::<Ident>() {
-                if let Some(condition) = match ident.to_string().as_str() {
+            if let Ok(ident) = lookahead.parse::<Ident>()
+                && let Some(condition) = match ident.to_string().as_str() {
                     "EQ" => {
                         let _: Ident = input.parse()?;
                         let value: Value = input.parse()?;
@@ -608,9 +599,7 @@ fn parse_condition_inner(input: ParseStream) -> Result<Condition> {
                     }
                     return Ok(condition);
                 }
-            }
         }
-    }
 
     let left = parse_atom(input)?;
 
@@ -676,7 +665,7 @@ impl Parse for Value {
         }
         Err(syn::Error::new(
             input.span(),
-            format!("expected one of: {}", VALID_INT_TYPES_TEXT),
+            format!("expected one of: {VALID_INT_TYPES_TEXT}"),
         ))
     }
 }
@@ -712,10 +701,7 @@ fn parse_atom(input: ParseStream) -> Result<Condition> {
 
     if input.peek(LitBool) {
         let lit_bool: LitBool = input.parse()?;
-        return match lit_bool.value {
-            true => Ok(Condition::True),
-            false => Ok(Condition::False),
-        };
+        return if lit_bool.value { Ok(Condition::True) } else { Ok(Condition::False) };
     }
 
     Err(syn::Error::new(
@@ -740,7 +726,7 @@ impl Condition {
     fn expand(&self) -> TokenStream2 {
         match self {
             Condition::Equals { attr, value } => {
-                let attr_str = attr.to_string();
+                let attr_str = attr.clone();
                 let value = value.expand();
                 quote! {
                     ::gate0::Condition::Equals {
@@ -750,7 +736,7 @@ impl Condition {
                 }
             }
             Condition::NotEquals { attr, value } => {
-                let attr_str = attr.to_string();
+                let attr_str = attr.clone();
                 match value {
                     Value::Bool(value) => {
                         quote! {

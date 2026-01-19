@@ -1,4 +1,4 @@
-//! Illustrative scenario: SaaS Multi-tenant API.
+//! Illustrative scenario: `SaaS` Multi-tenant API.
 //!
 //! This example demonstrates standard RBAC/Multi-tenancy logic:
 //! 1. Admins have full access to their tenant's resources.
