@@ -125,13 +125,13 @@ fn example_5_with_conditions() {
 
     let policy = policy_builder! {
         // Admins can do anything
-        ALLOW ANY WHERE { (role EQ "admin") } => ADMIN_ACCESS;
+        ALLOW ANY WHERE { role EQ "admin" } => ADMIN_ACCESS;
 
         // Suspended users are blocked
-        DENY ANY WHERE { (suspended EQ true) } => USER_BLOCKED;
+        DENY ANY WHERE { suspended EQ true } => USER_BLOCKED;
 
         // High-level users can read
-        ALLOW (ANY "read" ANY) WHERE { (level EQ 5) } => READ_ALLOWED;
+        ALLOW (ANY "read" ANY) WHERE { level EQ 5 } => READ_ALLOWED;
     }
     .build()
     .unwrap();
@@ -218,21 +218,21 @@ fn example_7_complete_policy() {
         } => BLOCKED;
 
         // 2. Admins can do anything
-        ALLOW ANY WHERE { (role EQ "admin") } => ADMIN_OK;
+        ALLOW ANY WHERE { role EQ "admin" } => ADMIN_OK;
 
         // 3. Anyone can read public resources
         ALLOW {
             principal: *,
             action: "read",
             resource: *,
-        } WHERE { (resource_type EQ "public") } => PUBLIC_READ;
+        } WHERE { resource_type EQ "public" } => PUBLIC_READ;
 
         // 4. Owners can write their own resources
         ALLOW {
             principal: *,
             action: ["write", "update"],
             resource: *,
-        } WHERE { (is_owner EQ true) } => OWNER_WRITE;
+        } WHERE { is_owner EQ true } => OWNER_WRITE;
 
         // 5. Default deny (implicit - no rule matches)
     }

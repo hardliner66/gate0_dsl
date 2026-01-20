@@ -9,6 +9,7 @@ fn test_simple_any_rules() {
     const REASON_TWO: ReasonCode = ReasonCode(2);
     const REASON_THREE: ReasonCode = ReasonCode(3);
     let policy = policy_builder![
+        // comment test
         ALLOW *   => 1;
         ALLOW *   => REASON_ONE;
 
@@ -116,12 +117,19 @@ fn test_where() {
     let policy = policy_builder![
         ALLOW ANY
             WHERE { role EQ "admin" } => 1;
+
         ALLOW ANY
             WHERE { "role" NEQ "admin" } => 1;
+
         ALLOW ANY
             WHERE { NOT (role EQ "admin" OR true) } => 1;
+
         ALLOW ANY
             WHERE { NOT ((role NEQ "admin") AND true) } => 2;
+
+        // same as (NOT true) AND true
+        ALLOW ANY
+            WHERE { NOT true AND true } => 1;
     ]
     .build()
     .unwrap();

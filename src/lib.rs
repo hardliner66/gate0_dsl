@@ -557,14 +557,9 @@ fn parse_condition_inner(input: ParseStream) -> Result<Condition> {
             && ident == "NOT"
         {
             let _: Ident = input.parse()?;
-            let inner = if input.peek(Paren) {
-                let content;
-                syn::parenthesized!(content in input);
-                Box::new(parse_condition_inner(&content)?)
-            } else {
-                Box::new(parse_atom(input)?)
-            };
-            return Ok(Condition::Not(inner));
+            let condition = Condition::Not(Box::new(parse_atom(&input)?));
+
+            return parse_rhs_condition(input, condition);
         }
     }
 
@@ -573,7 +568,7 @@ fn parse_condition_inner(input: ParseStream) -> Result<Condition> {
     {
         let lookahead = input.fork();
         if let Ok(ident) = lookahead.parse::<Ident>()
-            && let Some(condition) = match ident.to_string().as_str() {
+            && let Some(lhs) = match ident.to_string().as_str() {
                 "EQ" => {
                     let _: Ident = input.parse()?;
                     let value: Value = input.parse()?;
@@ -587,22 +582,7 @@ fn parse_condition_inner(input: ParseStream) -> Result<Condition> {
                 _ => None,
             }
         {
-            if let Ok(ident) = input.parse::<Ident>() {
-                match ident.to_string().as_str() {
-                    "AND" => {
-                        let right = Box::new(parse_condition_inner(input)?);
-                        return Ok(Condition::And(Box::new(condition), right));
-                    }
-                    "OR" => {
-                        let right = Box::new(parse_condition_inner(input)?);
-                        return Ok(Condition::Or(Box::new(condition), right));
-                    }
-                    _ => {
-                        return Err(syn::Error::new(input.span(), "expected one of: AND, OR"));
-                    }
-                }
-            }
-            return Ok(condition);
+            return parse_rhs_condition(input, lhs);
         }
     }
 
@@ -649,6 +629,24 @@ fn parse_condition_inner(input: ParseStream) -> Result<Condition> {
     }
 
     Ok(left)
+}
+
+fn parse_rhs_condition(input: ParseStream, lhs: Condition) -> Result<Condition> {
+    if let Ok(ident) = input.parse::<Ident>() {
+        match ident.to_string().as_str() {
+            "AND" => {
+                let right = Box::new(parse_condition_inner(input)?);
+                Ok(Condition::And(Box::new(lhs), right))
+            }
+            "OR" => {
+                let right = Box::new(parse_condition_inner(input)?);
+                Ok(Condition::Or(Box::new(lhs), right))
+            }
+            _ => Err(syn::Error::new(input.span(), "expected one of: AND, OR")),
+        }
+    } else {
+        Ok(lhs)
+    }
 }
 
 enum Value {
@@ -804,6 +802,3 @@ impl Condition {
         }
     }
 }
-
-#[cfg(test)]
-mod test {}

@@ -17,11 +17,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let policy = policy_builder![
         // Rule: Admins can do anything
         ALLOW ANY
-            WHERE { (role EQ "admin") } => ADMIN_ACCESS;
+            WHERE { role EQ "admin" } => ADMIN_ACCESS;
 
         // Rule: Members can read or list
         ALLOW { action: ["read", "list"] }
-            WHERE { (role EQ "member") } => MEMBER_READ;
+            WHERE { role EQ "member" } => MEMBER_READ;
     ]
     .build()?;
 

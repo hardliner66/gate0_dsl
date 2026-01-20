@@ -90,6 +90,25 @@ Policy {
                 2,
             ),
         },
+        Rule {
+            effect: Allow,
+            target: Target {
+                principal: Any,
+                action: Any,
+                resource: Any,
+            },
+            condition: Some(
+                And(
+                    Not(
+                        True,
+                    ),
+                    True,
+                ),
+            ),
+            reason: ReasonCode(
+                1,
+            ),
+        },
     ],
     config: PolicyConfig {
         max_rules: 1000,
