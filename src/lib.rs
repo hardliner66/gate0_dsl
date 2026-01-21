@@ -1,4 +1,4 @@
-#![doc = include_str!("../SYNTAX.md")]
+//! This is crate provides a macro for [gate0](https://github.com/Qarait/gate0) to simplify the creation of gate0 policies, using a simple DSL, and a macro for creating contexts.
 
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
@@ -12,6 +12,13 @@ use syn::{
 
 const VALID_INT_TYPES_TEXT: &str = "&str, bool, i8, i16, i32, i64, u8, u16, u32";
 
+/// ```
+/// // Can create a context with key-value pairs
+/// ctx! {
+///     <string> => <value>,
+///     ...
+/// }
+/// ```
 #[proc_macro]
 pub fn ctx(input: TokenStream) -> TokenStream {
     let ctx_def = parse_macro_input!(input as CtxDefinition);
@@ -19,6 +26,7 @@ pub fn ctx(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+#[doc = include_str!("../SYNTAX.md")]
 #[proc_macro]
 pub fn policy_builder(input: TokenStream) -> TokenStream {
     let policy_def = parse_macro_input!(input as PolicyDefinition);
