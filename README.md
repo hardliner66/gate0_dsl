@@ -27,6 +27,8 @@ policy_builder! {
 }
 ```
 
+The full syntax is described in the [SYNTAX.md](./SYNTAX.md) file.
+
 ### Basic Syntax (ctx!)
 
 ```rs
