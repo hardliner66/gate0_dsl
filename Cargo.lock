@@ -51,7 +51,7 @@ checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 [[package]]
 name = "gate0"
 version = "0.2.0"
-source = "git+https://github.com/Qarait/gate0#355c87652e65f5c74b8bc51c9e3b84c358b5d69c"
+source = "git+https://github.com/Qarait/gate0#c7411001ed5b79ffd0fe23d4e5f700cf5b80cbd3"
 
 [[package]]
 name = "gate0_dsl"
